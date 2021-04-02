@@ -29,3 +29,25 @@ Time                 Id Command    Argument
 2021-04-02T18:39:02.974916Z        22 Query     SELECT `id`, `password` FROM `users` WHERE `email`='webmaster@python.org' OR 1=1 -- '
  AND `password`='0'
 2021-04-02T18:39:02.975700Z        22 Quit
+2021-04-02T21:51:58.213646Z        10 Connect   root@localhost on  using Socket
+2021-04-02T21:51:58.213834Z        10 Query     select @@version_comment limit 1
+2021-04-02T21:51:58.213982Z        10 Query     CREATE DATABASE web_test
+2021-04-02T21:51:58.216754Z        10 Query     SELECT DATABASE()
+2021-04-02T21:51:58.216913Z        10 Init DB   web_test
+2021-04-02T21:51:58.217062Z        10 Query     CREATE TABLE `users` (
+    `id` int(11) NOT NULL AUTO_INCREMENT,
+    `email` varchar(255) COLLATE utf8_bin NOT NULL,
+    `password` varchar(255) COLLATE utf8_bin NOT NULL,
+    PRIMARY KEY (`id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_bin
+AUTO_INCREMENT=1
+2021-04-02T21:51:58.229479Z        10 Query     INSTALL COMPONENT 'file://component_log_sink_json'
+2021-04-02T21:51:58.244480Z        10 Query     SET PERSIST log_error_services = 'log_sink_json; log_filter_internal; log_sink_json'
+2021-04-02T21:51:58.244847Z        10 Quit
+2021-04-02T21:51:58.254147Z        11 Connect   root@localhost on  using Socket
+2021-04-02T21:51:58.254288Z        11 Query     SELECT @@datadir, @@pid_file
+2021-04-02T21:51:58.254474Z        11 Query     shutdown
+2021-04-02T21:51:58.254589Z        11 Query
+/usr/sbin/mysqld, Version: 8.0.23 (MySQL Community Server - GPL). started with:
+Tcp port: 3306  Unix socket: /var/run/mysqld/mysqld.sock
+Time                 Id Command    Argument

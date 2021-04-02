@@ -53,3 +53,14 @@ with connection:
         cursor.execute(sql)
         result = cursor.fetchone()
         print(result)
+
+    # Error testing
+    with connection.cursor() as cursor:
+        # Read a single record
+        argument = "webmaster@python.org' OR 1=1  "
+        password = "0"
+        sql = "SELECT `id`, `password` FROM `users` WHERE `email`='" + argument + "'\n AND `password`='" + password +"'"
+        print(sql)
+        cursor.execute(sql)
+        result = cursor.fetchone()
+        print(result)
