@@ -47,7 +47,7 @@ AUTO_INCREMENT=1
 2021-04-02T21:51:58.254147Z        11 Connect   root@localhost on  using Socket
 2021-04-02T21:51:58.254288Z        11 Query     SELECT @@datadir, @@pid_file
 2021-04-02T21:51:58.254474Z        11 Query     shutdown
-2021-04-02T21:51:58.254589Z        11 Query
+2021-04-02T21:51:58.254589Z        11 Quit
 /usr/sbin/mysqld, Version: 8.0.23 (MySQL Community Server - GPL). started with:
 Tcp port: 3306  Unix socket: /var/run/mysqld/mysqld.sock
 Time                 Id Command    Argument

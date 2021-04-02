@@ -1,5 +1,6 @@
 use usiem::events::field::{SiemField, SiemIp};
-use usiem::events::SiemLog;
+use usiem::events::{SiemLog, SiemEvent};
+use usiem::events::auth::{AuthEvent, AuthLoginType, LoginOutcome, RemoteLogin, LocalLogin};
 use std::borrow::Cow;
 
 /// Parse log connection events
@@ -23,14 +24,46 @@ pub fn parse_connection(mut log : SiemLog, content : &str) -> Result<SiemLog, Si
         },
         Err(_) => return Err(log)
     };
-    log.add_field("user.name", SiemField::User(user));
+    let hostname = match log.field("host.hostname") {
+        Some(field) => {
+            match field {
+                SiemField::Text(field) => {
+                    Cow::Owned(field.to_string())
+                },
+                _=> Cow::Borrowed("MySQL")
+            }
+        },
+        None => Cow::Borrowed("MySQL")
+    };
+
+    
+    log.add_field("user.name", SiemField::User(user.to_string()));
     log.add_field("network.protocol", SiemField::Text(Cow::Owned(protocol)));
     log.add_field("database.name", SiemField::Text(Cow::Owned(database)));
     match source_ip {
         Some(source_ip) => {
-            log.add_field("source.ip", SiemField::IP(source_ip));
+            let event = AuthEvent {
+                hostname : hostname,
+                outcome : LoginOutcome::SUCESS,
+                login_type : AuthLoginType::Remote(RemoteLogin {
+                    user_name : Cow::Owned(user),
+                    domain : Cow::Borrowed("mysql"),
+                    source_ip : source_ip
+                })
+            };
+            log.set_event(SiemEvent::Auth(event));
         },
-        None => {}
+        None => {
+            let event = AuthEvent {
+                hostname : hostname,
+                outcome : LoginOutcome::SUCESS,
+                login_type : AuthLoginType::Local(LocalLogin {
+                    user_name : Cow::Owned(user),
+                    domain : Cow::Borrowed("mysql")
+                })
+            };
+            log.set_event(SiemEvent::Auth(event));
+        }
     }
     Ok(log)
     //root@172.17.0.1 on web_test using TCP/IP
