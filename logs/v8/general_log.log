@@ -1,0 +1,31 @@
+/usr/sbin/mysqld, Version: 8.0.23 (MySQL Community Server - GPL). started with:
+Tcp port: 3306  Unix socket: /var/run/mysqld/mysqld.sock
+Time                 Id Command    Argument
+2021-04-02T18:08:21.261667Z        11 Connect   root@172.17.0.1 on web_test using TCP/IP
+2021-04-02T18:08:21.262038Z        11 Query     SET AUTOCOMMIT = 0
+2021-04-02T18:08:22.753638Z        11 Query     INSERT INTO `users` (`email`, `password`) VALUES ('webmaster@python.org', 'very-secret')
+2021-04-02T18:08:23.093472Z        11 Query     COMMIT
+2021-04-02T18:08:23.795094Z        11 Query     SELECT `id`, `password` FROM `users` WHERE `email`='webmaster@python.org'
+2021-04-02T18:08:24.477479Z        11 Quit
+2021-04-02T18:09:08.281835Z         9 Query     SELECT * FROM mysql.general_log
+2021-04-02T18:11:24.888656Z         9 Quit
+2021-04-02T18:11:29.750613Z        12 Connect   root@localhost on  using Socket
+2021-04-02T18:11:29.750905Z        12 Query     select @@version_comment limit 1
+2021-04-02T18:26:10.610869Z        16 Connect   root@172.17.0.1 on web_test using TCP/IP
+2021-04-02T18:26:10.611324Z        16 Query     SET AUTOCOMMIT = 0
+2021-04-02T18:26:10.611918Z        16 Query     INSERT INTO `users` (`email`, `password`) VALUES ('webmaster@python.org', 'very-secret')
+2021-04-02T18:26:10.612749Z        16 Query     COMMIT
+2021-04-02T18:26:10.618483Z        16 Query     SELECT `id`, `password` FROM `users` WHERE `email`='webmaster@python.org' OR 1=1 -- ' AND `password`='0'
+2021-04-02T18:30:15.861159Z        17 Query     SELECT `id`, `password` FROM `users` WHERE `email`='webmaster@python.org' AND `password`='0' OR 1=1 -- '
+2021-04-02T18:30:15.862098Z        17 Quit
+2021-04-02T18:39:02.966727Z        22 Connect   root@172.17.0.1 on web_test using TCP/IP
+2021-04-02T18:39:02.967260Z        22 Query     SET AUTOCOMMIT = 0
+2021-04-02T18:39:02.967915Z        22 Query     INSERT INTO `users` (`email`, `password`) VALUES ('webmaster@python.org', 'very-secret')
+2021-04-02T18:39:02.968554Z        22 Query     COMMIT
+2021-04-02T18:39:02.971987Z        22 Query     SELECT `id`, `password` FROM `users` WHERE `email`='webmaster@python.org'
+2021-04-02T18:39:02.973214Z        22 Query     SELECT `id`, `password` FROM `users` WHERE `email`='webmaster@python.org' AND `password`='0' OR 1=1 # '
+2021-04-02T18:39:02.974062Z        22 Query     SELECT `id`, `password` FROM `users` WHERE `email`='webmaster@python.org' OR 1=1 #'
+ AND `password`='0'
+2021-04-02T18:39:02.974916Z        22 Query     SELECT `id`, `password` FROM `users` WHERE `email`='webmaster@python.org' OR 1=1 -- '
+ AND `password`='0'
+2021-04-02T18:39:02.975700Z        22 Quit

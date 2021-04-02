@@ -1,0 +1,20 @@
+[package]
+name = "u-siem-mysql"
+version = "0.0.1"
+authors = ["Samuel Garcés <samuel.garces@protonmail.com>"]
+license = "MIT"
+description = "uSIEM MySQL Input/Output logging"
+repository = "https://github.com/u-siem/usiem-mysql"
+keywords = ["SIEM", "security", "logs","mysql"]
+categories = ["parsing"]
+edition = "2018"
+
+[lib]
+name = "usiem_mysql"
+path = "src/lib.rs"
+
+[dependencies]
+serde = { version = "1.0", features = ["derive"] }
+serde_json = { version = "1.0" }
+u-siem = {version = "0.0"}
+chrono = "0.4"
