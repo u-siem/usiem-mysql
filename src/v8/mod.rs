@@ -94,8 +94,9 @@ pub fn extract_general_fields<'a>(message: &'a str) -> Vec<&'a str> {
 #[cfg(test)]
 mod filterlog_tests {
     use super::{parse_general_log, extract_general_fields};
-    use usiem::events::SiemLog;
+    use usiem::events::{SiemLog, SiemEvent};
     use usiem::events::field::{SiemIp, SiemField};
+    use usiem::events::auth::{AuthLoginType,LoginOutcome};
 
     #[test]
     fn test_extract_fields() {
@@ -113,7 +114,7 @@ mod filterlog_tests {
         assert_eq!(map.get(0), Some(&"2021-04-02T18:30:15.862098Z"));
         assert_eq!(map.get(1), Some(&"17"));
         assert_eq!(map.get(2), Some(&"Quit"));
-        assert_eq!(map.get(3), None);// Special case
+        assert_eq!(map.get(3), Some(&"Quit"));// Special case
     }
 
     #[test]
@@ -130,6 +131,17 @@ mod filterlog_tests {
                 assert_eq!(log.field("source.ip"), Some(&SiemField::IP(SiemIp::from_ip_str("172.17.0.1").unwrap())));
                 assert_eq!(log.field("database.name"), Some(&SiemField::from_str("web_test")));
                 assert_eq!(log.field("network.protocol"), Some(&SiemField::from_str("TCP/IP")));
+                assert_eq!(log.field("event.outcome"), Some(&SiemField::from_str(LoginOutcome::ESTABLISH.to_string())));
+                match log.event() {
+                    SiemEvent::Auth(ath) => {
+                        match ath.login_type() {
+                            AuthLoginType::Remote(_rmt) => {
+                            },
+                            _ => {panic!("Invalid Log event")}
+                        }
+                    },
+                    _ => {panic!("Invalid Log event")}
+                }
             },
             Err(_) => {panic!("Cannot parse log")}
         }
@@ -165,5 +177,75 @@ mod filterlog_tests {
             Err(_) => {panic!("Cannot parse log")}
         }
     }
-
+    #[test]
+    fn test_parse_log_empty_db() {
+        let log = "2021-04-03T10:55:34.990497Z         9 Connect   root@localhost on  using Socket";
+        let log = SiemLog::new(log.to_string(), 0, SiemIp::V4(0));
+        let log_parsed = parse_general_log(log);
+        match log_parsed {
+            Ok(log) => {
+                assert_eq!(log.service(), "MySQL");
+                assert_eq!(log.field("event.dataset"), Some(&SiemField::from_str("Connect")));
+                assert_eq!(log.field("session.id"), Some(&SiemField::U32(9)));
+                assert_eq!(log.field("user.name"), Some(&SiemField::User(String::from("root"))));
+                assert_eq!(log.field("database.name"), None);
+                assert_eq!(log.field("network.protocol"), Some(&SiemField::from_str("Socket")));
+                assert_eq!(log.field("event.outcome"), Some(&SiemField::from_str(LoginOutcome::ESTABLISH.to_string())));
+            },
+            Err(_) => {panic!("Cannot parse log")}
+        }
+    }
+    #[test]
+    fn test_parse_log_access_denied() {
+        let log = "2021-04-03T10:55:34.994886Z         9 Connect   Access denied for user 'root'@'localhost' (using password: YES)";
+        let log = SiemLog::new(log.to_string(), 0, SiemIp::V4(0));
+        let log_parsed = parse_general_log(log);
+        match log_parsed {
+            Ok(log) => {
+                assert_eq!(log.service(), "MySQL");
+                assert_eq!(log.field("event.dataset"), Some(&SiemField::from_str("Connect")));
+                assert_eq!(log.field("session.id"), Some(&SiemField::U32(9)));
+                assert_eq!(log.field("user.name"), Some(&SiemField::User(String::from("root"))));
+                assert_eq!(log.field("event.outcome"), Some(&SiemField::from_str(LoginOutcome::FAIL.to_string())));
+                match log.event() {
+                    SiemEvent::Auth(ath) => {
+                        match ath.login_type() {
+                            AuthLoginType::Local(_locl) => {
+                            },
+                            _ => {panic!("Invalid Log event")}
+                        }
+                    },
+                    _ => {panic!("Invalid Log event")}
+                }
+            },
+            Err(_) => {panic!("Cannot parse log")}
+        }
+    }
+    #[test]
+    fn test_parse_log_remote_access_denied() {
+        let log = "2021-04-03T10:56:15.158251Z        10 Connect   Access denied for user 'root'@'172.17.0.1' (using password: YES)";
+        let log = SiemLog::new(log.to_string(), 0, SiemIp::V4(0));
+        let log_parsed = parse_general_log(log);
+        match log_parsed {
+            Ok(log) => {
+                assert_eq!(log.service(), "MySQL");
+                assert_eq!(log.field("event.dataset"), Some(&SiemField::from_str("Connect")));
+                assert_eq!(log.field("session.id"), Some(&SiemField::U32(10)));
+                assert_eq!(log.field("user.name"), Some(&SiemField::User(String::from("root"))));
+                assert_eq!(log.field("source.ip"), Some(&SiemField::IP(SiemIp::from_ip_str("172.17.0.1").unwrap())));
+                assert_eq!(log.field("event.outcome"), Some(&SiemField::from_str(LoginOutcome::FAIL.to_string())));
+                match log.event() {
+                    SiemEvent::Auth(ath) => {
+                        match ath.login_type() {
+                            AuthLoginType::Remote(_rmt) => {
+                            },
+                            _ => {panic!("Invalid Log event")}
+                        }
+                    },
+                    _ => {panic!("Invalid Log event")}
+                }
+            },
+            Err(_) => {panic!("Cannot parse log")}
+        }
+    }
 }
