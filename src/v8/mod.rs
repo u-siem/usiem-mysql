@@ -8,6 +8,12 @@ use auth::{parse_connection};
 
 pub fn valid_general_log(log : &SiemLog) -> bool {
     let log_line = log.message();
+    if log_line.len() < 42 {
+        return false;
+    }
+    if &log_line[37..38] != " " || &log_line[27..28] != " " {
+        return false;
+    }
     let fisr_char = match log_line.chars().next() {
         Some(chr) => chr,
         None => return false
@@ -17,6 +23,42 @@ pub fn valid_general_log(log : &SiemLog) -> bool {
 
 pub fn parse_general_log(mut log: SiemLog) -> Result<SiemLog, LogParsingError> {
     let log_line = log.message();
+    let log_line = match log_line.find(" Query ") {
+        None => {
+            match log_line.find(" Connect ") {
+                None => {
+                    match log_line.find(" Quit") {
+                        None => {
+                            return Err(LogParsingError::NoValidParser(log))
+                        },
+                        Some(pos) => {
+                            if pos >= 39 {
+                                &log_line[pos-37..]
+                            }else{
+                                log_line
+                            }
+                        }
+                    }
+                },
+                Some(pos) => {
+                    if pos >= 39 {
+                        &log_line[pos-37..]
+                    }else{
+                        log_line
+                    }
+                }
+            }
+        },
+        Some(pos) => {
+            if pos >= 39 {
+                &log_line[pos-37..]
+            }else{
+                log_line
+            }
+        }
+    };
+
+    // Checks
     let fisr_char = match log_line.chars().next() {
         Some(chr) => chr,
         None => return Err(LogParsingError::NoValidParser(log))
@@ -24,8 +66,14 @@ pub fn parse_general_log(mut log: SiemLog) -> Result<SiemLog, LogParsingError> {
     if fisr_char > '9' || fisr_char < '0' {
         return Err(LogParsingError::NoValidParser(log));
     }
+    if log_line.len() < 42 {
+        return Err(LogParsingError::NoValidParser(log));
+    }
+    if &log_line[37..38] != " " || &log_line[27..28] != " " {
+        return Err(LogParsingError::NoValidParser(log));
+    }
+    // Extraction
     let fields = extract_general_fields(log_line);
-    println!("{}",fields.len());
     if fields.len() != 4 {
         return Err(LogParsingError::NoValidParser(log))
     }
@@ -224,6 +272,34 @@ mod filterlog_tests {
     #[test]
     fn test_parse_log_remote_access_denied() {
         let log = "2021-04-03T10:56:15.158251Z        10 Connect   Access denied for user 'root'@'172.17.0.1' (using password: YES)";
+        let log = SiemLog::new(log.to_string(), 0, SiemIp::V4(0));
+        let log_parsed = parse_general_log(log);
+        match log_parsed {
+            Ok(log) => {
+                assert_eq!(log.service(), "MySQL");
+                assert_eq!(log.field("event.dataset"), Some(&SiemField::from_str("Connect")));
+                assert_eq!(log.field("session.id"), Some(&SiemField::U32(10)));
+                assert_eq!(log.field("user.name"), Some(&SiemField::User(String::from("root"))));
+                assert_eq!(log.field("source.ip"), Some(&SiemField::IP(SiemIp::from_ip_str("172.17.0.1").unwrap())));
+                assert_eq!(log.field("event.outcome"), Some(&SiemField::from_str(LoginOutcome::FAIL.to_string())));
+                match log.event() {
+                    SiemEvent::Auth(ath) => {
+                        match ath.login_type() {
+                            AuthLoginType::Remote(_rmt) => {
+                            },
+                            _ => {panic!("Invalid Log event")}
+                        }
+                    },
+                    _ => {panic!("Invalid Log event")}
+                }
+            },
+            Err(_) => {panic!("Cannot parse log")}
+        }
+    }
+
+    #[test]
+    fn test_parse_log_syslog() {
+        let log = "<134>Apr 3 10:56:15 MySQLServer - 2021-04-03T10:56:15.158251Z        10 Connect   Access denied for user 'root'@'172.17.0.1' (using password: YES)";
         let log = SiemLog::new(log.to_string(), 0, SiemIp::V4(0));
         let log_parsed = parse_general_log(log);
         match log_parsed {
